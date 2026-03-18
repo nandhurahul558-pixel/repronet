@@ -20,6 +20,11 @@
             
             <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Login</button>
         </form>
+
+        <p style="text-align: center; margin-top: 1rem; color: var(--text-secondary);">
+            New student?
+            <a href="{% url 'student_signup' %}" style="color: var(--primary-color);">Create an account</a>
+        </p>
     </div>
 </div>
 {% endblock %}
