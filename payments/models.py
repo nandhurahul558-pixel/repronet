@@ -21,3 +21,12 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"Txn {self.id} for Order {self.order.id} - {self.status}"
+
+
+class TransactionLog(models.Model):
+    transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='logs')
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Log for Transaction {self.transaction.id} at {self.created_at}"
