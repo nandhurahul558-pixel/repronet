@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h2>Order Details</h2>
+    <a href="{% url 'student_dashboard' %}" class="btn" style="background: var(--surface-light); color: var(--text-primary); border: 1px solid var(--border-color);">← Back to Dashboard</a>
+</div>
+
+<div class="grid-2">
+    <!-- Order Information -->
+    <div class="card">
+        <h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem; color: var(--primary-color);">Overview</h3>
+        
+        <div style="margin-bottom: 1rem;">
+            <p style="color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase;">Order ID</p>
+            <p style="font-weight: 500; font-family: monospace;">{{ order.id }}</p>
+        </div>
+        
+        <div style="margin-bottom: 1rem;">
+            <p style="color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase;">Status</p>
+            <p>
+                <span class="badge 
+                    {% if order.status == 'Submitted' %}badge-pending
+                    {% elif order.status == 'Printing' %}badge-printing
+                    {% elif order.status == 'Completed' %}badge-completed
+                    {% else %}badge-pending{% endif %}" style="font-size: 0.9rem;">
+                    {{ order.status }}
+                </span>
+            </p>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <p style="color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase;">Payment Details</p>
+            <p style="font-weight: 600; font-size: 1.25rem;">Total: ₹{{ order.total_cost }}</p>
+            <p style="color: var(--success-color); font-size: 0.9rem;">
+                {% if order.is_fully_paid %} Paid in full {% else %} Partially / Not Paid {% endif %}
+            </p>
+        </div>
+        
+        {% if order.status == 'Submitted' %}
+        <div style="margin-top: 2rem;">
+            <a href="{% url 'checkout' order.id %}" class="btn btn-success" style="width: 100%;">Proceed to Payment</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Document and Configuration -->
+    <div class="card">
+        <h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem; color: var(--primary-color);">Document & Configuration</h3>
+        
+        {% for doc in order.documents.all %}
+            <div style="background: var(--surface-light); padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                <div style="display: flex; gap: 1rem; align-items: start; margin-bottom: 1rem;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                        <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8"/>
+                    </svg>
+                    <div>
+                        <p style="font-weight: 500; word-break: break-all;">{{ doc.file.name }}</p>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary);">Uploaded: {{ doc.uploaded_at|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.9rem;">
+                    <div style="color: var(--text-secondary);">Copies:</div>
+                    <div style="font-weight: 500; text-align: right;">{{ doc.configuration.copies }}</div>
+                    
+                    <div style="color: var(--text-secondary);">Type:</div>
+                    <div style="font-weight: 500; text-align: right;">{{ doc.configuration.get_print_type_display }}</div>
+                    
+                    <div style="color: var(--text-secondary);">Sides:</div>
+                    <div style="font-weight: 500; text-align: right;">{{ doc.configuration.get_sides_display }}</div>
+                    
+                    <div style="color: var(--text-secondary);">Pages:</div>
+                    <div style="font-weight: 500; text-align: right;">{{ doc.configuration.pages_selection }}</div>
+                </div>
+            </div>
+        {% empty %}
+            <p>No documents found for this order.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

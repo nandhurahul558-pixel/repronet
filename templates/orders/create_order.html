@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <h2>Upload Document</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 2rem;">Configure your print preferences for the document.</p>
+    
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group document-upload-zone" style="border: 2px dashed var(--border-color); padding: 3rem; text-align: center; border-radius: 8px; margin-bottom: 2rem; transition: border-color 0.3s ease;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Click to upload document</h3>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">Supported formats: PDF, DOCX, JPG, PNG</p>
+            <input type="file" id="document" name="document" required style="display: block; width: 100%; max-width: 250px; margin: 0 auto;">
+        </div>
+        
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label" for="copies">Number of Copies</label>
+                <input type="number" id="copies" name="copies" class="form-control" value="1" min="1" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="pages_selection">Specific Pages</label>
+                <input type="text" id="pages_selection" name="pages_selection" class="form-control" value="all" placeholder="e.g. all, 1-5, 3">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="print_type">Print Type</label>
+                <select id="print_type" name="print_type" class="form-control" required>
+                    <option value="BW">Black & White (₹{{ pricing.bw_single_sided }}/page)</option>
+                    <option value="Color">Color (₹{{ pricing.color_single_sided }}/page)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="sides">Print Sides</label>
+                <select id="sides" name="sides" class="form-control" required>
+                    <option value="Single">Single Sided</option>
+                    <option value="Double">Double Sided</option>
+                </select>
+            </div>
+        </div>
+        
+        <div style="margin-top: 2rem; display: flex; justify-content: flex-end; align-items: center; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+            <p style="color: var(--text-secondary);"><span style="color: #fff; font-weight: 600;">Note:</span> Final cost is calculated automatically.</p>
+            <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem;">Estimate Cost & Proceed</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

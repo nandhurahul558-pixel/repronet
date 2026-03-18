@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h2>Store Settings</h2>
+</div>
+
+<div class="grid-2">
+    <!-- Service Status Toggle -->
+    <div class="card">
+        <h3>Service Availability</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+            Control whether the portal is currently accepting new print orders from students.
+        </p>
+        
+        <form method="POST">
+            {% csrf_token %}
+            <div style="display: flex; align-items: center; justify-content: space-between; background: var(--surface-light); padding: 1.5rem; border-radius: 8px;">
+                <div>
+                    <h4 style="margin: 0; color: #fff;">Status 
+                        {% if store_settings.is_accepting_orders %}
+                            <span style="color: var(--success-color); margin-left: 0.5rem; font-size: 0.9rem;">(Active)</span>
+                        {% else %}
+                            <span style="color: var(--danger-color); margin-left: 0.5rem; font-size: 0.9rem;">(Disabled)</span>
+                        {% endif %}
+                    </h4>
+                </div>
+                <button type="submit" name="toggle_service" class="btn {% if store_settings.is_accepting_orders %}btn-danger{% else %}btn-success{% endif %}" style="width: 140px;">
+                    {% if store_settings.is_accepting_orders %}Disable Service{% else %}Enable Service{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Pricing Configuration -->
+    <div class="card">
+        <h3>Pricing Calculator</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+            Set the cost per page (in ₹) for different printing configurations.
+        </p>
+        
+        <form method="POST">
+            {% csrf_token %}
+            <div class="grid-2" style="gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label" for="bw_single_sided">B&W (Single-Sided)</label>
+                    <input type="number" step="0.01" class="form-control" id="bw_single_sided" name="bw_single_sided" value="{{ pricing.bw_single_sided }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="bw_double_sided">B&W (Double-Sided)</label>
+                    <input type="number" step="0.01" class="form-control" id="bw_double_sided" name="bw_double_sided" value="{{ pricing.bw_double_sided }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="color_single_sided">Color (Single-Sided)</label>
+                    <input type="number" step="0.01" class="form-control" id="color_single_sided" name="color_single_sided" value="{{ pricing.color_single_sided }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="color_double_sided">Color (Double-Sided)</label>
+                    <input type="number" step="0.01" class="form-control" id="color_double_sided" name="color_double_sided" value="{{ pricing.color_double_sided }}" required>
+                </div>
+            </div>
+            
+            <div style="text-align: right; margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                <button type="submit" name="update_pricing" class="btn btn-primary">Save Pricing Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

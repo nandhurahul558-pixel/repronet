@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h2>My Print Orders</h2>
+    <a href="{% url 'create_order' %}" class="btn btn-primary">+ New Print Job</a>
+</div>
+
+<div class="card">
+    {% if orders %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Cost</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.id|truncatechars:12 }}</td>
+                    <td>{{ order.created_at|date:"M d, Y H:i" }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if order.status == 'Submitted' %}badge-pending
+                            {% elif order.status == 'Printing' %}badge-printing
+                            {% elif order.status == 'Completed' %}badge-completed
+                            {% else %}badge-pending{% endif %}">
+                            {{ order.status }}
+                        </span>
+                    </td>
+                    <td>₹{{ order.total_cost }}</td>
+                    <td>
+                        <a href="{% url 'order_detail' order.id %}" class="btn btn-danger" style="padding: 0.3rem 0.6rem; font-size: 0.85rem;">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem 0; color: var(--text-secondary);">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem; opacity: 0.5;">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+            <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8"/>
+        </svg>
+        <p>You have no print orders yet.</p>
+        <a href="{% url 'create_order' %}" class="btn btn-primary" style="margin-top: 1rem;">Start your first order</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
