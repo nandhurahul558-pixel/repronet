@@ -34,6 +34,9 @@ class Document(models.Model):
     file = models.FileField(upload_to='documents/%Y/%m/%d/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
+    # Page information
+    total_pages = models.PositiveIntegerField(default=1, help_text="Total pages in the document")
+    
     # Computed cost for this specific document
     cost = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
 

@@ -76,6 +76,17 @@ body {
     color: var(--primary-color);
 }
 
+.nav-user-chip {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--surface-light);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
 .container {
     flex: 1;
     width: 100%;

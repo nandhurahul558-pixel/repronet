@@ -2,11 +2,11 @@
 {% load static %}
 
 {% block content %}
-<div class="card" style="max-width: 800px; margin: 0 auto;">
+<div class="card" style="max-width: 900px; margin: 0 auto;">
     <h2>Upload Document</h2>
     <p style="color: var(--text-secondary); margin-bottom: 2rem;">Configure your print preferences for the document.</p>
     
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST" enctype="multipart/form-data" id="orderForm">
         {% csrf_token %}
         <div class="form-group document-upload-zone" style="border: 2px dashed var(--border-color); padding: 3rem; text-align: center; border-radius: 8px; margin-bottom: 2rem; transition: border-color 0.3s ease;">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;">
@@ -14,9 +14,10 @@
                 <polyline points="17 8 12 3 7 8"></polyline>
                 <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Click to upload document</h3>
+            <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Click to upload one or more documents</h3>
             <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">Supported formats: PDF, DOCX, JPG, PNG</p>
-            <input type="file" id="document" name="document" required style="display: block; width: 100%; max-width: 250px; margin: 0 auto;">
+            <input type="file" id="documents" name="documents" multiple required style="display: block; width: 100%; max-width: 250px; margin: 0 auto;">
+            <div id="fileInfo" style="margin-top: 1rem; color: var(--primary-color); font-weight: 600; display: none;"></div>
         </div>
         
         <div class="grid-2">
@@ -26,8 +27,14 @@
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="pages_selection">Specific Pages</label>
-                <input type="text" id="pages_selection" name="pages_selection" class="form-control" value="all" placeholder="e.g. all, 1-5, 3">
+                <label class="form-label" for="pages_selection">
+                    Page Range
+                    <span style="font-size: 0.85em; color: var(--text-secondary);">(<span id="totalPagesDisplay">?</span> pages total)</span>
+                </label>
+                <input type="text" id="pages_selection" name="pages_selection" class="form-control" value="all" placeholder="e.g., all, 1-5, 1,3,5-7" title="Enter page numbers or ranges separated by commas (e.g., 1-5, 10, 15-20)">
+                <small id="pagesHelpText" style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">
+                    Press Tab or click elsewhere to update cost
+                </small>
             </div>
 
             <div class="form-group">
@@ -47,10 +54,204 @@
             </div>
         </div>
         
-        <div style="margin-top: 2rem; display: flex; justify-content: flex-end; align-items: center; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
-            <p style="color: var(--text-secondary);"><span style="color: #fff; font-weight: 600;">Note:</span> Final cost is calculated automatically.</p>
-            <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem;">Estimate Cost & Proceed</button>
+        <!-- Cost Summary -->
+        <div style="background: var(--bg-secondary); padding: 1.5rem; border-radius: 8px; margin-top: 2rem; margin-bottom: 2rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.5rem;">
+                <div>
+                    <p style="color: var(--text-secondary); font-size: 0.9em; margin: 0;">Pages to Print</p>
+                    <p style="font-size: 1.5em; font-weight: 600; color: var(--primary-color); margin: 0.5rem 0 0 0;">
+                        <span id="pagesToPrint">0</span> / <span id="totalPagesFull">?</span>
+                    </p>
+                </div>
+                <div>
+                    <p style="color: var(--text-secondary); font-size: 0.9em; margin: 0;">Sheets</p>
+                    <p style="font-size: 1.5em; font-weight: 600; color: var(--primary-color); margin: 0.5rem 0 0 0;" id="sheetCount">0</p>
+                </div>
+                <div>
+                    <p style="color: var(--text-secondary); font-size: 0.9em; margin: 0;">Cost per Page</p>
+                    <p style="font-size: 1.5em; font-weight: 600; color: var(--primary-color); margin: 0.5rem 0 0 0;">₹<span id="costPerPage">0.00</span></p>
+                </div>
+                <div style="border-left: 2px solid var(--border-color); padding-left: 1.5rem;">
+                    <p style="color: var(--text-secondary); font-size: 0.9em; margin: 0;">Total Cost</p>
+                    <p style="font-size: 1.8em; font-weight: 700; color: #28a745; margin: 0.5rem 0 0 0;">₹<span id="totalCost">0.00</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+            <a href="{% url 'student_dashboard' %}" class="btn" style="background-color: var(--text-secondary); padding: 0.8rem 2rem; text-decoration: none; border-radius: 5px; color: white;">Cancel</a>
+            <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem;" id="submitBtn">Proceed to Payment</button>
         </div>
     </form>
 </div>
+
+<script>
+const CSRF_TOKEN = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+let totalPages = null;
+
+// Handle file upload and detect page count
+document.getElementById('documents').addEventListener('change', function(e) {
+    const files = Array.from(e.target.files || []);
+    const fileInfo = document.getElementById('fileInfo');
+    const pagesSelectionInput = document.getElementById('pages_selection');
+    const pagesHelpText = document.getElementById('pagesHelpText');
+
+    if (!files.length) {
+        totalPages = null;
+        fileInfo.style.display = 'none';
+        return;
+    }
+
+    if (files.length > 1) {
+        pagesSelectionInput.value = 'all';
+        pagesSelectionInput.disabled = true;
+        pagesHelpText.textContent = 'Page range is disabled for multiple documents. All pages will be printed.';
+    } else {
+        pagesSelectionInput.disabled = false;
+        pagesHelpText.textContent = 'Press Tab or click elsewhere to update cost';
+    }
+
+    fileInfo.textContent = `Detecting pages for ${files.length} document(s)...`;
+    fileInfo.style.display = 'block';
+
+    Promise.all(
+        files.map(file => {
+            const formData = new FormData();
+            formData.append('document', file);
+
+            return fetch('{% url "detect_pages" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': CSRF_TOKEN
+                },
+                body: formData
+            })
+                .then(response => response.json())
+                .then(result => ({ file, result }))
+                .catch(() => ({ file, result: { success: false, total_pages: 1, file_name: file.name, file_size: file.size } }));
+        })
+    ).then(results => {
+        const totalDetectedPages = results.reduce((sum, item) => {
+            const detected = item.result && item.result.success ? item.result.total_pages : 1;
+            return sum + detected;
+        }, 0);
+
+        totalPages = totalDetectedPages;
+        document.getElementById('totalPagesDisplay').textContent = totalDetectedPages;
+        document.getElementById('totalPagesFull').textContent = totalDetectedPages;
+
+        const lines = results.map(item => {
+            const pageCount = item.result && item.result.success ? item.result.total_pages : 1;
+            return `${item.file.name}: ${pageCount} page(s)`;
+        });
+        fileInfo.innerHTML = `${files.length} document(s) selected. Total detected pages: ${totalDetectedPages}<br>${lines.join('<br>')}`;
+        calculateCost();
+    });
+});
+
+// Calculate cost on input change with debounce
+let calculateTimeout;
+function attachCalculateListeners() {
+    const inputs = ['pages_selection', 'copies', 'print_type', 'sides'];
+    inputs.forEach(id => {
+        document.getElementById(id).addEventListener('change', function() {
+            clearTimeout(calculateTimeout);
+            calculateTimeout = setTimeout(calculateCost, 500);
+        });
+    });
+    document.getElementById('pages_selection').addEventListener('blur', calculateCost);
+}
+
+function calculateCost() {
+    if (totalPages === null) {
+        document.getElementById('pagesToPrint').textContent = '0';
+        document.getElementById('totalCost').textContent = '0.00';
+        document.getElementById('costPerPage').textContent = '0.00';
+        document.getElementById('sheetCount').textContent = '0';
+        return;
+    }
+    
+    const data = {
+        total_pages: totalPages,
+        pages_selection: document.getElementById('pages_selection').value,
+        copies: parseInt(document.getElementById('copies').value) || 1,
+        print_type: document.getElementById('print_type').value,
+        sides: document.getElementById('sides').value
+    };
+    
+    fetch('{% url "calculate_cost" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        document.getElementById('pagesToPrint').textContent = result.actual_pages;
+        document.getElementById('sheetCount').textContent = result.total_sheets;
+        document.getElementById('costPerPage').textContent = result.cost_per_page.toFixed(2);
+        document.getElementById('totalCost').textContent = result.estimated_cost.toFixed(2);
+    })
+    .catch(error => console.error('Error calculating cost:', error));
+}
+
+// Simulate page detection (will be actual detection from server during submit)
+// For now, set a default and let server update it
+document.getElementById('orderForm').addEventListener('submit', function(e) {
+    const fileInput = document.getElementById('documents');
+    if (!fileInput.files.length) {
+        e.preventDefault();
+        alert('Please select at least one document');
+        return;
+    }
+    
+    // Show loading state
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').textContent = 'Processing...';
+});
+
+// Initialize listeners
+attachCalculateListeners();
+
+// Set initial values - these will be updated when the form is submitted
+document.getElementById('totalPagesDisplay').textContent = '?';
+document.getElementById('totalPagesFull').textContent = '?';
+</script>
+
+<style>
+    .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+    
+    .form-control {
+        padding: 0.8rem;
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        font-size: 1em;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+</style>
 {% endblock %}

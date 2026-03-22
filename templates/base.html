@@ -25,6 +25,15 @@
         </a>
         <div class="nav-links">
             {% if user.is_authenticated %}
+                <span class="nav-user-chip">
+                    {% if user.first_name or user.last_name %}
+                        {{ user.get_full_name }}
+                    {% elif user.roll_number %}
+                        {{ user.roll_number }}
+                    {% else %}
+                        {{ user.username }}
+                    {% endif %}
+                </span>
                 {% if user.is_admin or user.is_superuser %}
                     <a href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
                     <a href="{% url 'admin_settings' %}">Settings</a>
@@ -35,8 +44,8 @@
                 {% endif %}
                 <a href="{% url 'logout' %}" class="btn btn-danger" style="margin-left: 1rem;">Logout</a>
             {% else %}
-                <a href="{% url 'student_login' %}">Student Login</a>
-                <a href="{% url 'student_signup' %}">Student Sign Up</a>
+                <a href="{% url 'student_login' %}">Login</a>
+                <a href="{% url 'student_signup' %}">Sign Up</a>
                 <a href="{% url 'admin_login' %}">Admin Login</a>
             {% endif %}
         </div>

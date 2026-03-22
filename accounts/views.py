@@ -5,6 +5,16 @@ from django.contrib import messages
 from .models import User
 
 
+def home_view(request):
+    """Home/Landing page view"""
+    if request.user.is_authenticated:
+        if request.user.is_student:
+            return redirect('student_dashboard')
+        elif request.user.is_admin or request.user.is_superuser:
+            return redirect('admin_dashboard')
+    return render(request, 'accounts/home.html')
+
+
 def student_signup_view(request):
     if request.user.is_authenticated:
         if request.user.is_student:
